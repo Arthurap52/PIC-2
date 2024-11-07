@@ -1,31 +1,33 @@
 const express = require('express');
-const fs = require('fs');
+const { MongoClient } = require('mongodb');
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
 
-let vagas = [];
+const uri = 'mongodb://localhost:27017'; // Ajuste se usar o Atlas
+const client = new MongoClient(uri);
+let collection;
 
-// Carrega dados do arquivo JSON
-fs.readFile('./server/database.json', 'utf-8', (err, data) => {
-  if (!err) vagas = JSON.parse(data);
-});
+async function conectarDB() {
+  await client.connect();
+  const db = client.db('estacionamento');
+  collection = db.collection('vagas');
+  console.log('Conectado ao MongoDB');
+}
+conectarDB();
 
-// Rota para registrar entrada
-app.post('/entrada', (req, res) => {
+app.post('/entrada', async (req, res) => {
   const { placa } = req.body;
   const entrada = new Date().toISOString();
 
-  vagas.push({ placa, entrada });
-  fs.writeFile('./server/database.json', JSON.stringify(vagas), () => {});
-
-  res.status(201).send(' Novo Veículo registrado.');
+  await collection.insertOne({ placa, entrada });
+  res.status(201).send('Veículo registrado.');
 });
 
-// Rota para listar vagas
-app.get('/vagas', (req, res) => {
+app.get('/vagas', async (req, res) => {
+  const vagas = await collection.find().toArray();
   res.json(vagas);
 });
 
-app.listen(PORT, () => console.log(` O Servidor esta rodando em http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Servidor rodando em http://localhost:${PORT}`));
