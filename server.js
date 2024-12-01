@@ -1,19 +1,33 @@
 require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const cors = require('cors');  
+const estacionamentoRoutes = require('./routes/estacionamentoRoutes');
 
 const app = express();
+
+const corsOptions = {
+    origin: '*', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+    allowedHeaders: ['Content-Type', 'Authorization'], 
+};
+
+app.use(cors(corsOptions)); 
+
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+app.use('/api/estacionamentos', estacionamentoRoutes);
 
 const vagaSchema = new mongoose.Schema({
-  numero: Number,
-  status: String,
+    numero: Number,
+    status: { type: String, enum: ['Disponível', 'Ocupada'], default: 'Disponível' },
+    placa: { type: String, required: false, unique: true },
+    hora_entrada: { type: Date, required: false },
 });
 
-const Vaga = mongoose.model('Vaga', vagaSchema);
+const Vaga = mongoose.models.Vaga || mongoose.model('Vaga', vagaSchema);
 
 console.log('Mongo URI:', process.env.MONGO_URI);
 
@@ -24,33 +38,89 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('Conectado ao MongoDB'))
 .catch(err => console.error('Erro ao conectar ao MongoDB', err));
 
-app.post('/api/estacionamentos', async (req, res) => {
+async function inicializarVagas() {
+    console.log("Verificando se há vagas disponíveis...");
+    const vagasExistentes = await Vaga.countDocuments({ status: 'Disponível' });
+
+    console.log(`Vagas existentes: ${vagasExistentes}`);
+
+    if (vagasExistentes === 0) {
+        console.log('Não há vagas disponíveis. Criando novas vagas...');
+
+        
+        const vagas = [];
+        for (let i = 1; i <= 10; i++) {
+            const vaga = {
+                numero: i,  
+                status: 'Disponível',
+                placa: null,  
+                hora_entrada: null
+            };
+            vagas.push(vaga);
+}
+
+
+        try {
+            const result = await Vaga.insertMany(vagas);
+            console.log('Vagas criadas com sucesso:', result);
+        } catch (err) {
+            console.error('Erro ao criar vagas:', err);
+        }
+    } else {
+        console.log(`${vagasExistentes} vagas disponíveis.`);
+    }
+}
+
+mongoose.connection.once('open', async () => {
+    console.log('Banco de dados conectado.');
+    await inicializarVagas(); 
+});
+
+app.post('/api/estacionamentos/entrada', async (req, res) => {
+    const vagasDisponiveis = await Vaga.countDocuments({ status: 'Disponível' });
+    if (vagasDisponiveis === 0) {
+        return res.status(400).json({ error: 'Não há vagas disponíveis' });
+    }
+
     const { placa } = req.body;
+
     if (!placa) {
-        return res.status(400).json({ message: 'Placa é obrigatória' });
+        return res.status(400).json({ error: "Placa do veículo é necessária" });
     }
 
     try {
-       
-        const novaVaga = new Vaga({
-            numero: Math.floor(Math.random() * 100), // Exemplo de número aleatório para vaga
-            status: 'Ocupada',
+        const vagaDisponivel = await Vaga.findOne({ status: 'Disponível' });
+
+        if (!vagaDisponivel) {
+            return res.status(400).json({ error: "Não há vagas disponíveis" });
+        }
+
+        const novoVeiculo = new Veiculo({
+            placa,
+            hora_entrada: new Date(),
+            vaga_ocupada: vagaDisponivel.numero_vaga
         });
 
-        await novaVaga.save();
+        await novoVeiculo.save();
 
-        const vagas = await Vaga.find();
-        res.json(vagas);
+        vagaDisponivel.status = 'Ocupada';
+        vagaDisponivel.placa_veiculo = placa;
+        vagaDisponivel.hora_entrada = new Date();
+        await vagaDisponivel.save();
 
-    } catch (error) {
-        console.error('Erro ao registrar entrada:', error);
-        res.status(500).json({ message: 'Erro ao registrar a entrada.' });
+        res.status(200).json({ message: "Entrada registrada com sucesso", vaga: vagaDisponivel });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Erro ao registrar a entrada" });
     }
 });
 
+
 app.get('/api/estacionamentos', async (req, res) => {
+    console.log('Requisição recebida em /api/estacionamentos');
     try {
         const vagas = await Vaga.find();
+        console.log('Vagas retornadas:', vagas);
         res.json(vagas);
     } catch (error) {
         console.error('Erro ao obter as vagas:', error);

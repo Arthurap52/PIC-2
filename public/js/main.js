@@ -1,58 +1,64 @@
+const API_BASE_URL = 'http://localhost:3000/api/estacionamentos';
 const formVeiculo = document.getElementById('form-veiculo');
 const placaInput = document.getElementById('placa');
 const listaVagas = document.getElementById('lista-vagas');
 
-async function registrarEntrada(event) {
+function registrarEntrada(event) {
     event.preventDefault();
-
-    const placa = placaInput.value.trim();
-    if (placa === '') {
-        alert('Por favor, insira uma placa válida.');
+  
+    const placa = placaInput.value; 
+    if (!placa) {
+        console.error('Placa não fornecida');
         return;
     }
 
-    try {
-        const response = await fetch('/api/estacionamentos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ placa })
-        });
-
-        if (!response.ok) {
-            throw new Error('Falha ao registrar entrada.');
+    fetch('http://localhost:3000/api/estacionamentos/entrada', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ placa: placa })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error('Erro ao registrar entrada:', data.error);
+        } else {
+            console.log('Entrada registrada com sucesso:', data);
+            atualizarVagaNaTela(data.vaga);  
         }
+    })
+    .catch(error => console.error('Erro ao registrar entrada:', error));
+}
 
-        const data = await response.json();
-        atualizarListaVagas(data);
-        placaInput.value = '';  
-
-    } catch (error) {
-        console.error('Erro:', error);
-        alert('Erro ao registrar a entrada. Tente novamente.');
+function atualizarVagaNaTela(vaga) {
+    const vagaElement = document.querySelector(`#vaga-${vaga.numero_vaga}`);
+    if (vagaElement) {
+        vagaElement.textContent = `Vaga ${vaga.numero_vaga}: ${vaga.status}`;
+    } else {
+        const novaVaga = document.createElement('li');
+        novaVaga.id = `vaga-${vaga.numero_vaga}`;
+        novaVaga.textContent = `Vaga ${vaga.numero_vaga}: ${vaga.status}`;
+        listaVagas.appendChild(novaVaga);
     }
 }
 
-function atualizarListaVagas(vagas) {
-    listaVagas.innerHTML = '';
-    vagas.forEach(vaga => {
-        const li = document.createElement('li');
-        li.textContent = `Vaga ${vaga.numero} - Status: ${vaga.status}`;
-        listaVagas.appendChild(li);
-    });
-}
-
-formVeiculo.addEventListener('submit', registrarEntrada);
-
-async function carregarVagas() {
+const carregarVagas = async () => {
     try {
-        const response = await fetch('/api/estacionamentos');
+        const response = await fetch(API_BASE_URL);
+        if (!response.ok) {
+            throw new Error(`Erro ao carregar vagas: ${response.statusText}`);
+        }
         const vagas = await response.json();
-        atualizarListaVagas(vagas);
+
+        listaVagas.innerHTML = vagas.map(vaga => `
+            <li id="vaga-${vaga.numero_vaga}">Vaga ${vaga.numero_vaga}: ${vaga.status}</li>
+        `).join('');
     } catch (error) {
         console.error('Erro ao carregar as vagas:', error);
     }
-}
+};
+
+formVeiculo.addEventListener('submit', registrarEntrada);
 
 window.onload = carregarVagas;

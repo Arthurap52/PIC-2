@@ -13,16 +13,17 @@
     
       <main>
         <form id="form-veiculo">
-          <input type="text" id="placa" placeholder="Placa do Veículo" required>
-          <button type="submit">Registrar uma Entrada</button>
-        </form>
+          <label for="placa">Placa:</label>
+          <input type="text" id="placa" name="placa" required />
+          <button type="submit">Registrar Entrada</button>
+      </form>
     
-        <div id="vagas">
-          <h2>Status das Vagas</h2>
-          <ul id="lista-vagas"></ul>
-        </div>
+      <div id="vagas">
+        <h2>Status das Vagas</h2>
+        <ul id="lista-vagas"></ul>
+      </div>
       </main>
-    
-      <script src="./js/main.js"></script>
+      
+      <script src="./js/main.js" defer></script>
 </body>
 </html>
