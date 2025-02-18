@@ -4,11 +4,13 @@ const estacionamentoSchema = new mongoose.Schema({
     endereco: {
         type: String,
         required: true,
-        unique: true 
+        unique: true,
+        index: true 
     },
     capacidade: {
         type: Number,
-        required: true
+        required: true,
+        min: 1 
     },
     servicos: {
         type: [String],
@@ -19,5 +21,13 @@ const estacionamentoSchema = new mongoose.Schema({
         default: Date.now
     }
 });
+
+estacionamentoSchema.methods.isFull = function() {
+    return this.capacidade <= 0; 
+};
+
+estacionamentoSchema.statics.findByService = function(service) {
+    return this.find({ servicos: service });
+};
 
 module.exports = mongoose.model('Estacionamento', estacionamentoSchema);
