@@ -1,14 +1,20 @@
 const API_BASE_URL = 'http://localhost:3000/api/estacionamentos';
 const formVeiculo = document.getElementById('form-veiculo');
 const placaInput = document.getElementById('placa');
+const corInput = document.getElementById('cor'); 
+const modeloInput = document.getElementById('modelo'); 
 const listaVagas = document.getElementById('lista-vagas');
 
 function registrarEntrada(event) {
     event.preventDefault();
-  
+
     const placa = placaInput.value; 
-    if (!placa) {
-        console.error('Placa não fornecida');
+    const cor = corInput.value; 
+    const modelo = modeloInput.value; 
+
+
+    if (!placa || !cor || !modelo) {
+        console.error('Placa, cor e modelo são obrigatórios');
         return;
     }
 
@@ -17,7 +23,7 @@ function registrarEntrada(event) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ placa: placa })
+        body: JSON.stringify({ placa: placa, cor: cor, modelo: modelo }) 
     })
     .then(response => response.json())
     .then(data => {
@@ -31,30 +37,27 @@ function registrarEntrada(event) {
     .catch(error => console.error('Erro ao registrar entrada:', error));
 }
 
-function editarVeiculo(idVeiculo) {
+async function editarVeiculo(idVeiculo) {
     const novaVaga = prompt('Digite o número da nova vaga:');
     if (!novaVaga) return;
 
-    fetch(`${API_BASE_URL}/veiculos/${idVeiculo}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vaga_ocupada: novaVaga })
-    })
-    .then(response => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/veiculos/${idVeiculo}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vaga_ocupada: novaVaga })
+        });
+
         if (!response.ok) {
             throw new Error(`Erro ao editar veículo: ${response.statusText}`);
         }
-        return response.json();
-    })
-    .then(() => {
-        carregarVagas(); 
-        carregarVeiculos(); 
+
         alert('Veículo editado com sucesso!');
-    })
-    .catch(error => {
+        carregarVeiculos(); 
+    } catch (error) {
         console.error('Erro ao editar o veículo:', error);
-        alert('Erro ao editar o veículo.');
-    });
+        alert('Erro ao editar o veículo. Verifique o console para mais detalhes.');
+    }
 }
 
 
@@ -76,19 +79,15 @@ function excluirVeiculo(veiculoId) {
 
 function atualizarVagaNaTela(vaga) {
     const listaVagas = document.getElementById('lista-vagas');
-    if (!listaVagas) {
-        console.error('Elemento listaVagas não encontrado');
-        return;
-    }
-
-    const vagaElement = document.querySelector(`#vaga-${vaga.numero_vaga}`);
+    const vagaElement = document.getElementById(`vaga-${vaga.numero_vaga}`);
+    
     if (vagaElement) {
-        vagaElement.textContent = `Vaga ${vaga.numero_vaga}: ${vaga.status}`;
+        vagaElement.textContent = `Vaga ${vaga.numero_vaga}: Ocupada`;
     } else {
         const novaVaga = document.createElement('li');
         novaVaga.id = `vaga-${vaga.numero_vaga}`;
-        novaVaga.textContent = `Vaga ${vaga.numero_vaga}: ${vaga.status}`;
-        listaVagas.appendChild(novaVaga);
+        novaVaga.textContent = `Vaga ${vaga.numero_vaga}: Ocupada`;
+        listaVagas.appendChild(novaVaga); 
     }
 }
 

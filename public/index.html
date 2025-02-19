@@ -15,12 +15,15 @@
         <form id="form-veiculo">
           <label for="placa">Placa:</label>
           <input type="text" id="placa" name="placa" required />
+          <input type="text" id="cor" placeholder="Cor" required>
+          <input type="text" id="modelo" placeholder="Modelo" required>
           <button type="submit">Registrar Entrada</button>
       </form>
     
       <div id="vagas">
         <h2>Vagas Disponíveis</h2>
         <p id="vagas-disponiveis">Carregando...</p> 
+        <ul id="lista-vagas"></ul>
       </div>
       <div id="veiculos">
         <h2>Veículos Estacionados</h2>

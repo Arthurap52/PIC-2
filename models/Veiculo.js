@@ -1,23 +1,21 @@
 const mongoose = require('mongoose');
 
-const VeiculoSchema = new mongoose.Schema({
+const veiculoSchema = new mongoose.Schema({
     placa: { 
         type: String, 
-        required: true, 
-        match: /^[A-Z]{3}-\d{4}$/ 
+        required: true,
+        validate: {
+            validator: function(v) {
+                return /^[A-Z]{3}-\d{4}$/.test(v); 
+            },
+            message: props => `${props.value} não é uma placa válida!`
+        }
     },
-    modelo: { type: String, required: true },
     cor: { type: String, required: true },
-    vaga_ocupada: { type: Number, required: true },
-    hora_entrada: { type: Date, default: Date.now },
+    modelo: { type: String, required: true },
+    hora_entrada: { type: Date, required: true },
+    vaga_ocupada: { type: String, required: true }
 });
 
-VeiculoSchema.methods.isParked = function() {
-    return this.vaga_ocupada !== null; 
-};
-
-VeiculoSchema.statics.findByPlaca = function(placa) {
-    return this.findOne({ placa });
-};
-
-module.exports = mongoose.model('Veiculo', VeiculoSchema);
+const Veiculo = mongoose.model('Veiculo', veiculoSchema);
+module.exports = Veiculo;

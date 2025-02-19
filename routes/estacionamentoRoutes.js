@@ -11,12 +11,9 @@ const authMiddleware = (req, res, next) => {
 };
 
 router.post('/entrada', async (req, res) => {
-    console.log('Requisição recebida:', req.body);
-    const { placa } = req.body;
-
-    if (!placa) {
-        console.log('Placa não fornecida');
-        return res.status(400).json({ error: 'Placa é obrigatória' });
+    const { placa, cor, modelo } = req.body; 
+    if (!placa || !cor || !modelo) {
+        return res.status(400).json({ error: 'Placa, cor e modelo são obrigatórios' });
     }
 
     try {
@@ -28,6 +25,8 @@ router.post('/entrada', async (req, res) => {
 
         const novoVeiculo = new Veiculo({
             placa,
+            cor,
+            modelo,
             hora_entrada: new Date(),
             vaga_ocupada: vagaDisponivel.numero_vaga
         });
@@ -40,8 +39,8 @@ router.post('/entrada', async (req, res) => {
         await vagaDisponivel.save();
 
         res.status(200).json({ message: 'Entrada registrada com sucesso', vaga: vagaDisponivel });
-    } catch (err) {
-        console.error(err);
+    } catch (error) {
+        console.error('Erro ao registrar entrada:', error);
         res.status(500).json({ error: 'Erro ao registrar entrada' });
     }
 });
