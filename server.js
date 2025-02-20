@@ -17,7 +17,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions)); 
 
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use('/api/estacionamentos', estacionamentoRoutes);
@@ -43,7 +42,7 @@ async function inicializarVagas() {
         const vagas = [];
         for (let i = 1; i <= 10; i++) {
             const vaga = {
-                numero_vaga: i,  // Altere para 'numero_vaga'
+                numero_vaga: i,
                 status: 'Disponível',
                 placa_veiculo: null,  
                 hora_entrada: null
@@ -61,7 +60,6 @@ async function inicializarVagas() {
         console.log(`${vagasExistentes} vagas disponíveis.`);
     }
 }
-
 
 mongoose.connection.once('open', async () => {
     console.log('Banco de dados conectado.');
@@ -110,8 +108,10 @@ app.post('/api/estacionamentos/entrada', async (req, res) => {
 app.put('/api/estacionamentos/veiculos/:id', async (req, res) => {
     console.log('Requisição recebida para atualizar veículo:', req.body);
 
+    const id = req.params.id; // Captura o ID da URL
     const { placa, modelo, cor, vaga_ocupada } = req.body;
-    
+
+    // Verifica se o ID é válido
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ error: 'ID inválido.' });
     }
@@ -121,7 +121,7 @@ app.put('/api/estacionamentos/veiculos/:id', async (req, res) => {
     }
 
     try {
-        const veiculo = await Veiculo.findByIdAndUpdate(req.params.id, { placa, modelo, cor, vaga_ocupada }, { new: true });
+        const veiculo = await Veiculo.findByIdAndUpdate(id, { placa, modelo, cor, vaga_ocupada }, { new: true });
 
         if (!veiculo) {
             return res.status(404).json({ error: 'Veículo não encontrado' });
@@ -139,7 +139,7 @@ app.put('/api/estacionamentos/veiculos/:id', async (req, res) => {
         if (novaVaga) {
             novaVaga.status = 'Ocupada';
             novaVaga.placa_veiculo = placa;
-            novaVaga.hora_entrada = veiculo.hora_entrada;
+            novaVaga.hora_entrada = new Date();
             await novaVaga.save();
         }
 

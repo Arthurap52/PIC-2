@@ -4,26 +4,49 @@ const placaInput = document.getElementById('placa');
 const corInput = document.getElementById('cor'); 
 const modeloInput = document.getElementById('modelo'); 
 const listaVagas = document.getElementById('lista-vagas');
+const modal = document.getElementById("meuModal");
+const btnFechar = document.getElementById("btnFechar");
+
+let idVeiculoEdicao = null;
+
+function abrirModal(placa, cor, modelo, id) {
+    document.getElementById('placaModal').value = placa;
+    document.getElementById('corModal').value = cor;
+    document.getElementById('modeloModal').value = modelo;
+    idVeiculoEdicao = id; 
+    modal.style.display = "block";
+}
+
+function fecharModal() {
+    modal.style.display = "none";
+}
+
+btnFechar.onclick = fecharModal;
+
+window.onclick = function(event) {
+    if (event.target === modal) {
+        fecharModal();
+    }
+};
 
 function registrarEntrada(event) {
     event.preventDefault();
 
     const placa = placaInput.value; 
-    const cor = corInput.value; 
-    const modelo = modeloInput.value; 
-
+    const cor = corInput.value;
+    const modelo = modeloInput.value;
 
     if (!placa || !cor || !modelo) {
         console.error('Placa, cor e modelo são obrigatórios');
         return;
     }
 
-    fetch('http://localhost:3000/api/estacionamentos/entrada', {
+    fetch(`${API_BASE_URL}/entrada`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ placa: placa, cor: cor, modelo: modelo }) 
+        body: JSON.stringify({ placa, cor, modelo })
     })
     .then(response => response.json())
     .then(data => {
@@ -37,22 +60,31 @@ function registrarEntrada(event) {
     .catch(error => console.error('Erro ao registrar entrada:', error));
 }
 
-async function editarVeiculo(idVeiculo) {
-    const novaVaga = prompt('Digite o número da nova vaga:');
-    if (!novaVaga) return;
+async function editarVeiculo() {
+    const placa = document.getElementById('placaModal').value;
+    const cor = document.getElementById('corModal').value;
+    const modelo = document.getElementById('modeloModal').value;
+    const vaga_ocupada = document.getElementById('vagaModal').value; 
+
+    if (!placa || !cor || !modelo || !vaga_ocupada) {
+        alert('Todos os campos devem ser preenchidos.');
+        return;
+    }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/veiculos/${idVeiculo}`, {
+        const response = await fetch(`${API_BASE_URL}/veiculos/${idVeiculoEdicao}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vaga_ocupada: novaVaga })
+            body: JSON.stringify({ placa, cor, modelo, vaga_ocupada }) 
         });
 
         if (!response.ok) {
-            throw new Error(`Erro ao editar veículo: ${response.statusText}`);
+            const errorData = await response.json(); 
+            throw new Error(`Erro ao editar veículo: ${errorData.error || response.statusText}`);
         }
 
         alert('Veículo editado com sucesso!');
+        fecharModal();
         carregarVeiculos(); 
     } catch (error) {
         console.error('Erro ao editar o veículo:', error);
@@ -60,6 +92,10 @@ async function editarVeiculo(idVeiculo) {
     }
 }
 
+document.getElementById('formVeiculo').onsubmit = function(event) {
+    event.preventDefault(); 
+    editarVeiculo();  
+};
 
 function excluirVeiculo(veiculoId) {
     const confirmar = confirm('Tem certeza que deseja excluir este veículo?');
@@ -78,7 +114,6 @@ function excluirVeiculo(veiculoId) {
 }
 
 function atualizarVagaNaTela(vaga) {
-    const listaVagas = document.getElementById('lista-vagas');
     const vagaElement = document.getElementById(`vaga-${vaga.numero_vaga}`);
     
     if (vagaElement) {
@@ -87,7 +122,7 @@ function atualizarVagaNaTela(vaga) {
         const novaVaga = document.createElement('li');
         novaVaga.id = `vaga-${vaga.numero_vaga}`;
         novaVaga.textContent = `Vaga ${vaga.numero_vaga}: Ocupada`;
-        listaVagas.appendChild(novaVaga); 
+        listaVagas.appendChild(novaVaga);
     }
 }
 
@@ -106,7 +141,7 @@ function criarElementoVeiculo(veiculo) {
     const excluirButton = li.querySelector('.excluir-veiculo');
 
     editarButton.addEventListener('click', function() {
-        editarVeiculo(veiculo._id);
+        abrirModal(veiculo.placa, veiculo.cor, veiculo.modelo, veiculo._id); 
     });
 
     excluirButton.addEventListener('click', function() {
@@ -159,9 +194,15 @@ const carregarVagas = async () => {
     }
 };
 
-formVeiculo.addEventListener('submit', registrarEntrada);
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('form-veiculo').addEventListener('submit', registrarEntrada);
+});
 
 window.onload = () => {
     carregarVagas(); 
     carregarVeiculos(); 
 };
+
+

@@ -29,6 +29,23 @@
         <h2>Veículos Estacionados</h2>
         <ul id="lista-veiculos"></ul>
       </div>
+      <div class="modal" id="meuModal">
+        <div class="conteudo-modal">
+            <span class="fechar" id="btnFechar">&times;</span>
+            <h2>Editar Informações do Veículo</h2>
+            <form id="formVeiculo">
+                <label for="placaModal">Placa:</label>
+                <input type="text" id="placaModal" name="placaModal" required>
+                <label for="corModal">Cor:</label>
+                <input type="text" id="corModal" name="corModal" required>
+                <label for="modeloModal">Modelo:</label>
+                <input type="text" id="modeloModal" name="modeloModal" required>
+                <label for="vagaModal">Vaga:</label>
+                <input type="text" id="vagaModal" name="vagaModal" required> 
+                <button type="submit">Salvar</button>
+            </form>
+        </div>
+    </div>
       </main>
       
       <script src="./js/main.js" defer></script>
