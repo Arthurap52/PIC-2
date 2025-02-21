@@ -74,17 +74,20 @@ function carregarVagasOcupadas() {
 
 function preencherSelectVagas() {
     const vagaSelect = document.getElementById('vagaModal');
-    vagaSelect.innerHTML = ''; 
+    vagaSelect.innerHTML = '<option value="">Selecione uma vaga</option>';
 
-    for (let i = 1; i <= 10; i++) { 
-        const option = document.createElement('option');
-        option.value = i; 
-        option.textContent = `Vaga ${i}`;
-        if (!vagasOcupadas.includes(i)) { 
+    todasAsVagas.forEach(vaga => {
+        if (vaga.status === 'Disponível' && !vagasOcupadas.includes(vaga.numero_vaga)) {
+            const option = document.createElement('option');
+            option.value = vaga.numero_vaga;
+            option.textContent = `Vaga ${vaga.numero_vaga}`;
             vagaSelect.appendChild(option);
         }
-    }
+    });
 }
+
+console.log('Todas as Vagas:', todasAsVagas);
+console.log('Vagas Ocupadas:', vagasOcupadas);
 
 async function editarVeiculo() {
     const placa = document.getElementById('placaModal').value;
@@ -210,32 +213,44 @@ function criarElementoVaga(vaga) {
     `;
 }
 
-const carregarVagas = async () => {
+async function carregarVagas() {
     try {
-        const response = await fetch(API_BASE_URL);
-        if (!response.ok) {
-            throw new Error(`Erro ao carregar vagas: ${response.statusText}`);
-        }
-        const vagas = await response.json();
+        const veiculosResponse = await fetch(`${API_BASE_URL}/veiculos`);
+        if (!veiculosResponse.ok) throw new Error('Erro ao carregar veículos');
+        const veiculos = await veiculosResponse.json();
+  
+        vagasOcupadas = veiculos
+            .filter(veiculo => veiculo.vaga_ocupada !== null)
+            .map(veiculo => veiculo.vaga_ocupada);
+        console.log('Vagas Ocupadas Atualizadas:', vagasOcupadas);
 
-        const vagasDisponiveis = vagas.filter(vaga => vaga.status === 'Disponível').length;
-        
-        document.getElementById('vagas-disponiveis').innerText = `${vagasDisponiveis} vagas disponíveis`;
+        const response = await fetch(`${API_BASE_URL}/vagas`);
+        if (!response.ok) throw new Error('Erro ao carregar vagas');
+        todasAsVagas = await response.json();
+
+        preencherSelectVagas();
+        atualizarContadorVagasDisponiveis();
     } catch (error) {
-        console.error('Erro ao carregar as vagas:', error);
-        document.getElementById('vagas-disponiveis').innerText = 'Erro ao carregar vagas';
+        console.error('Erro ao carregar vagas:', error);
     }
-};
+}
 
+function atualizarContadorVagasDisponiveis() {
+    const vagasDisponiveis = todasAsVagas.filter(vaga => 
+        vaga.status === 'Disponível' && !vagasOcupadas.includes(vaga.numero_vaga)
+    ).length;
+    
+    document.getElementById('numero-vagas-disponiveis').textContent = vagasDisponiveis;
+}
 
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('form-veiculo').addEventListener('submit', registrarEntrada);
 });
 
-window.onload = () => {
-    carregarVagas(); 
-    carregarVeiculos(); 
+window.onload = async () => {
+    await carregarVagas(); 
+    carregarVeiculos();    
 };
 
 

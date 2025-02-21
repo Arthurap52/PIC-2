@@ -108,10 +108,10 @@ app.post('/api/estacionamentos/entrada', async (req, res) => {
 app.put('/api/estacionamentos/veiculos/:id', async (req, res) => {
     console.log('Requisição recebida para atualizar veículo:', req.body);
 
-    const id = req.params.id; // Captura o ID da URL
+    const id = req.params.id;
     const { placa, modelo, cor, vaga_ocupada } = req.body;
 
-    // Verifica se o ID é válido
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ error: 'ID inválido.' });
     }
@@ -215,13 +215,23 @@ app.get('/api/estacionamentos/veiculos/:id', async (req, res) => {
     }
 });
 
+app.get('/api/estacionamentos/vagas', async (req, res) => {
+    try {
+        const vagas = await Vaga.find(); 
+        res.json(vagas);
+    } catch (error) {
+        console.error('Erro ao obter vagas:', error);
+        res.status(500).json({ message: 'Erro ao obter vagas.' });
+    }
+});
+
 app.get('/api/estacionamentos/veiculos', async (req, res) => {
     try {
-        const veiculos = await Veiculo.find();
+        const veiculos = await Veiculo.find(); 
         res.json(veiculos);
     } catch (error) {
-        console.error('Erro ao obter os veículos:', error);
-        res.status(500).json({ message: 'Erro ao obter os veículos.' });
+        console.error('Erro ao obter veículos:', error);
+        res.status(500).json({ message: 'Erro ao obter veículos.' });
     }
 });
 
