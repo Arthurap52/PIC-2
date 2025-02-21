@@ -8,6 +8,8 @@ const modal = document.getElementById("meuModal");
 const btnFechar = document.getElementById("btnFechar");
 
 let idVeiculoEdicao = null;
+let todasAsVagas = [];
+let vagasOcupadas = []; 
 
 function abrirModal(placa, cor, modelo, id) {
     document.getElementById('placaModal').value = placa;
@@ -60,14 +62,43 @@ function registrarEntrada(event) {
     .catch(error => console.error('Erro ao registrar entrada:', error));
 }
 
+function carregarVagasOcupadas() {
+    fetch(`${API_BASE_URL}/veiculos`)
+        .then(response => response.json())
+        .then(veiculos => {
+            vagasOcupadas = veiculos.map(veiculo => veiculo.vaga_ocupada);
+            preencherSelectVagas(); 
+        })
+        .catch(error => console.error('Erro ao carregar veículos:', error));
+}
+
+function preencherSelectVagas() {
+    const vagaSelect = document.getElementById('vagaModal');
+    vagaSelect.innerHTML = ''; 
+
+    for (let i = 1; i <= 10; i++) { 
+        const option = document.createElement('option');
+        option.value = i; 
+        option.textContent = `Vaga ${i}`;
+        if (!vagasOcupadas.includes(i)) { 
+            vagaSelect.appendChild(option);
+        }
+    }
+}
+
 async function editarVeiculo() {
     const placa = document.getElementById('placaModal').value;
     const cor = document.getElementById('corModal').value;
     const modelo = document.getElementById('modeloModal').value;
-    const vaga_ocupada = document.getElementById('vagaModal').value; 
+    const vaga_ocupada = document.getElementById('vagaModal').value;
 
     if (!placa || !cor || !modelo || !vaga_ocupada) {
         alert('Todos os campos devem ser preenchidos.');
+        return;
+    }
+
+    if (vagasOcupadas.includes(parseInt(vaga_ocupada))) {
+        alert("A vaga selecionada já está ocupada. Por favor, escolha outra vaga.");
         return;
     }
 
@@ -75,11 +106,11 @@ async function editarVeiculo() {
         const response = await fetch(`${API_BASE_URL}/veiculos/${idVeiculoEdicao}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ placa, cor, modelo, vaga_ocupada }) 
+            body: JSON.stringify({ placa, cor, modelo, vaga_ocupada })
         });
 
         if (!response.ok) {
-            const errorData = await response.json(); 
+            const errorData = await response.json();
             throw new Error(`Erro ao editar veículo: ${errorData.error || response.statusText}`);
         }
 
@@ -91,6 +122,8 @@ async function editarVeiculo() {
         alert('Erro ao editar o veículo. Verifique o console para mais detalhes.');
     }
 }
+
+carregarVagasOcupadas();
 
 document.getElementById('formVeiculo').onsubmit = function(event) {
     event.preventDefault(); 
